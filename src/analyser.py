@@ -1,4 +1,8 @@
 from PyPDF2 import PdfFileReader, PdfFileWriter, PdfFileMerger
+from PIL.ExifTags import TAGS, GPSTAGS
+from PIL import Image
+import gmplot
+import os
 
 '''
 This function printfs the metadata from a pdf file given the name of the file. It requires the file to be in the data folder
@@ -46,13 +50,107 @@ def write_metadata_pdf(pdf_file, metadata):
     outputStream.close()
     print("\nNew metadata added!\n")
 
+def getImageMetadata(image_file):
+    try:
+        webpage = ""
+        exifData = {}
+        imgFile = Image.open("./data/"+image_file)
+        info = imgFile._getexif()
+        if info:
+            for (tag, value) in info.items():
+                decoded = TAGS.get(tag, tag)
+                if decoded == "GPSInfo":
+                    gps_data = {}
+                    for t in value:
+                        sub_decoded = GPSTAGS.get(t,t)
+                        gps_data[sub_decoded] = value[t]
 
-pdf_name = input("Insert PDF file to extract metadata: ")
-print("\n")
-print_metadata_pdf(pdf_name)
+                    exifData[decoded] = gps_data
+                else:
+                    exifData[decoded] = value
+            for key in exifData:
+                print("[X] " + str(key) + ": " + str(exifData[key]))
+            (lat, lon) = get_lat_lon(exifData)
+            print("\n\n[X] Latitude and longitude of image: " + str(lat) + ", " + str(lon))
+            if lat and lon:
+                print("\n\nCreating map\n")
+                gmap = gmplot.GoogleMapPlotter(lat, lon, 16)
+                gmap.marker(lat, lon)
+                gmap.draw("./result/" + image_file + ".html")
+                webpage = "./result/" + image_file + ".html"
+        else:
+            print("No metadata found!")
+    except:
+        pass
+    return webpage
 
-erase_metadata = input("Do you want to erase metadata from the file?(S/N)")
-if erase_metadata is 'S':
-    write_metadata_pdf(pdf_name, None)
+def _convert_to_degress(value):
+    """Helper function to convert the GPS coordinates stored in the EXIF to degress in float format"""
+    d0 = value[0][0]
+    d1 = value[0][1]
+    d = float(d0) / float(d1)
 
-print("\nAllright, be careful with your data!\n")
+    m0 = value[1][0]
+    m1 = value[1][1]
+    m = float(m0) / float(m1)
+
+    s0 = value[2][0]
+    s1 = value[2][1]
+    s = float(s0) / float(s1)
+
+    return d + (m / 60.0) + (s / 3600.0)
+
+def _get_if_exist(data, key):
+    if key in data:
+        return data[key]
+
+    return None
+
+def get_lat_lon(exif_data):
+    """Returns the latitude and longitude, if available, from the provided exif_data (obtained through get_exif_data above)"""
+    lat = None
+    lon = None
+
+    if "GPSInfo" in exif_data:
+        gps_info = exif_data["GPSInfo"]
+
+        gps_latitude = _get_if_exist(gps_info, "GPSLatitude")
+        gps_latitude_ref = _get_if_exist(gps_info, 'GPSLatitudeRef')
+        gps_longitude = _get_if_exist(gps_info, 'GPSLongitude')
+        gps_longitude_ref = _get_if_exist(gps_info, 'GPSLongitudeRef')
+
+        if gps_latitude and gps_latitude_ref and gps_longitude and gps_longitude_ref:
+            lat = _convert_to_degress(gps_latitude)
+            if gps_latitude_ref != "N":
+                lat = 0 - lat
+
+            lon = _convert_to_degress(gps_longitude)
+            if gps_longitude_ref != "E":
+                lon = 0 - lon
+
+    return lat, lon
+
+def main(fileType):
+    if fileType=="PDF":
+        pdf_name = input("Insert PDF file to extract metadata: ")
+        print("\n")
+        print_metadata_pdf(pdf_name)
+
+        erase_metadata = input("Do you want to erase metadata from the file?(S/N)")
+        if erase_metadata is 'S':
+            write_metadata_pdf(pdf_name, None)
+
+        image = input("Insert image: ")
+        getImageMetadata(image)
+
+    elif fileType=="Image":
+        image_name = input("Insert Image file to extract metadata: ")
+        webpage = getImageMetadata(image_name)
+        open_map = input("Would you like to see the map?(S/N): ")
+        if open_map=='S':
+            os.system("firefox " + webpage)
+
+    print("\nAllright, be careful with your data!\n")
+
+fileType = input("Insert the type of file(Image/PDF):")
+main(fileType)
