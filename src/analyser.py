@@ -50,6 +50,10 @@ def write_metadata_pdf(pdf_file, metadata):
     outputStream.close()
     print("\nNew metadata added!\n")
 
+'''
+This function gets the metadata of a given image file. It also generates an htlm of a map with the obtained location if found.
+The image_file argument is the name of the image file that you want to check.
+'''
 def getImageMetadata(image_file):
     try:
         webpage = ""
@@ -84,8 +88,10 @@ def getImageMetadata(image_file):
         pass
     return webpage
 
+'''
+Helper function to convert the GPS coordinates stored in the EXIF to degress in float format
+'''
 def _convert_to_degress(value):
-    """Helper function to convert the GPS coordinates stored in the EXIF to degress in float format"""
     d0 = value[0][0]
     d1 = value[0][1]
     d = float(d0) / float(d1)
@@ -100,14 +106,17 @@ def _convert_to_degress(value):
 
     return d + (m / 60.0) + (s / 3600.0)
 
+'''Helper function'''
 def _get_if_exist(data, key):
     if key in data:
         return data[key]
 
     return None
 
+'''
+Returns the latitude and longitude, if available, from the provided exif_data (obtained through get_exif_data above)
+'''
 def get_lat_lon(exif_data):
-    """Returns the latitude and longitude, if available, from the provided exif_data (obtained through get_exif_data above)"""
     lat = None
     lon = None
 
@@ -130,6 +139,9 @@ def get_lat_lon(exif_data):
 
     return lat, lon
 
+'''
+Main function that given the type of file performs the metadata analysis and further checkings.
+'''
 def main(fileType):
     if fileType=="PDF":
         pdf_name = input("Insert PDF file to extract metadata: ")
@@ -151,6 +163,8 @@ def main(fileType):
             os.system("firefox " + webpage)
 
     print("\nAllright, be careful with your data!\n")
+
+
 
 fileType = input("Insert the type of file(Image/PDF):")
 main(fileType)
