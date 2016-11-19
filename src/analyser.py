@@ -157,29 +157,32 @@ def writeImageMetadata(imageFile, metadata):
 Main function that given the type of file performs the metadata analysis and further checkings.
 '''
 def main(fileType):
-    if fileType=="PDF":
+    if fileType=="pdf":
         pdf_name = input("Insert PDF file to extract metadata: ")
         print("\n")
         print_metadata_pdf(pdf_name)
 
-        erase_metadata = input("Do you want to erase metadata from the file?(S/N)")
-        if erase_metadata is 'S':
+        erase_metadata = input("Do you want to erase metadata from the file?(S/N)").lower()
+        if erase_metadata is 's':
             write_metadata_pdf(pdf_name, None)
 
         image = input("Insert image: ")
         getImageMetadata(image)
 
-    elif fileType=="Image":
+    elif fileType=="image":
         image_name = input("Insert Image file to extract metadata: ")
         webpage = getImageMetadata(image_name)
-        open_map = input("Would you like to see the map?(S/N): ")
-        if open_map=='S':
-            os.system("firefox " + webpage)
+        if webpage != "":
+            open_map = input("Would you like to see the map?(S/N): ").lower()
+            if open_map=='s':
+                os.system("firefox " + webpage)
         writeImageMetadata(image_name, None)
 
     print("\nAllright, be careful with your data!\n")
 
 
+script_directory = os.path.dirname(__file__)
+os.chdir(os.path.join(script_directory, '../')) #Switch the working directory to the main folder of the program
 
-fileType = input("Insert the type of file(Image/PDF):")
+fileType = input("Insert the type of file(Image/PDF):").lower()
 main(fileType)
