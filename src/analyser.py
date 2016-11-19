@@ -139,6 +139,20 @@ def get_lat_lon(exif_data):
 
     return lat, lon
 
+def writeImageMetadata(imageFile, metadata):
+    try:
+        image_file = open("./data/" + imageFile)
+        image = Image.open(image_file)
+
+        # next 3 lines strip exif
+        data = list(image.getdata())
+        image_without_exif = Image.new(image.mode, image.size)
+        image_without_exif.putdata(data)
+
+        image_without_exif.save("./result/" + imageFile)
+    except UnicodeDecodeError as error:
+        print("An error was found while removing metadata!\nError: " + str(error))
+
 '''
 Main function that given the type of file performs the metadata analysis and further checkings.
 '''
@@ -161,6 +175,7 @@ def main(fileType):
         open_map = input("Would you like to see the map?(S/N): ")
         if open_map=='S':
             os.system("firefox " + webpage)
+        writeImageMetadata(image_name, None)
 
     print("\nAllright, be careful with your data!\n")
 
